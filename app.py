@@ -1,93 +1,80 @@
 import streamlit as st
 import requests
+import pandas as pd
+from datetime import datetime
 
+# 1. Page Configuration
+st.set_page_config(
+    page_title="Tuvalu National Weather Center",
+    page_icon="🇹🇻",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# 1. PAGE SETUP (Dedicated Full Width)
-st.set_page_config(page_title="Tuvalu National Weather Center", layout="wide")
+# 2. Load API Key from Streamlit Secrets
+# (Make sure you added OPENWEATHER_API_KEY in the Streamlit Cloud Advanced Settings!)
+try:
+    API_KEY = st.secrets["OPENWEATHER_API_KEY"]
+except:
+    st.error("API Key not found. Please add OPENWEATHER_API_KEY to Streamlit Secrets.")
+    st.stop()
 
-# 2. FULL-PAGE CSS
-st.html("""
+# 3. Weather Fetching Function
+def get_weather(city):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+    response = requests.get(url)
+    return response.json()
+
+# 4. Custom Styling & Header
+st.markdown("""
     <style>
-        /* Hide Streamlit UI */
-        footer {display: none !important;}
-        [data-testid="stHeader"] {display: none !important;}
-        [data-testid="stToolbar"] {display: none !important;}
-        
-        /* Dark Theme & Spacing */
-        .stApp {background-color: #0f172a;}
-        .block-container {padding-top: 1rem !important; padding-bottom: 2rem !important;}
-        
-        /* Card Styling */
-        .weather-hero {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border-radius: 28px;
-            padding: 40px;
-            border: 1px solid #334155;
-            text-align: center;
-            margin-bottom: 30px;
-        }
+    .main {
+        background-color: #0e1117;
+    }
+    .stMetric {
+        background-color: #1e1e1e;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #333;
+    }
     </style>
-""")
+    """, unsafe_allow_html=True)
 
-# 3. WEATHER DATA FETCH
-def get_weather():
-    try:
-        api_key = st.secrets["OPENWEATHER_API_KEY"]
-        url = f"http://api.openweathermap.org/data/2.5/weather?q=Funafuti,TV&appid={api_key}&units=metric"
-        data = requests.get(url).json()
-        return {
-            "temp": round(data['main']['temp']),
-            "hum": data['main']['humidity'],
-            "wind": round(data['wind']['speed'] * 3.6, 1),
-            "cond": data['weather'][0]['main'],
-            "icon": data['weather'][0]['icon'],
-            "desc": data['weather'][0]['description']
-        }
-    except:
-        return {"temp": 30, "hum": 82, "wind": 15, "cond": "Cloudy", "icon": "03d", "desc": "overcast clouds"}
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: #aaa;'>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M')}</p>", unsafe_allow_html=True)
 
-w = get_weather()
+# 5. Dashboard Layout
+col1, col2, col3 = st.columns(3)
 
-# 4. PAGE HEADER & QUICK STATS
-st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_html=True)
+# Coordinates for Tuvalu islands
+islands = ["Funafuti", "Nanumea", "Nui"]
 
-# Metrics Row
-m1, m2, m3, m4 = st.columns(4)
-with m1: st.metric("Current Temp", f"{w['temp']}°C")
-with m2: st.metric("Humidity", f"{w['hum']}%")
-with m3: st.metric("Wind Speed", f"{w['wind']} km/h")
-with m4: st.metric("Condition", w['cond'])
+for i, island in enumerate(islands):
+    data = get_weather(island)
+    if data.get("main"):
+        temp = data["main"]["temp"]
+        desc = data["weather"][0]["description"].capitalize()
+        hum = data["main"]["humidity"]
+        wind = data["wind"]["speed"]
+        
+        with [col1, col2, col3][i]:
+            st.metric(label=f"📍 {island}", value=f"{temp}°C", delta=desc)
+            st.write(f"💨 Wind: {wind} m/s")
+            st.write(f"💧 Humidity: {hum}%")
+    else:
+        with [col1, col2, col3][i]:
+            st.error(f"Could not load data for {island}")
 
-st.divider()
+# 6. Interactive Map Section
+st.markdown("---")
+st.subheader("Regional Satellite View")
 
-# 5. MAIN CONTENT AREA
-col_left, col_right = st.columns([1, 1.5], gap="large")
+# Center of Tuvalu roughly: -7.1095, 177.6493
+map_data = pd.DataFrame({
+    'lat': [-8.5208, -5.6700, -7.2200],
+    'lon': [179.1962, 176.1200, 177.1500]
+})
 
-with col_left:
-    # Large Weather Hero Card
-    st.html(f"""
-    <div class="weather-hero">
-        <h2 style="color: #9ca3af; font-size: 1rem; margin-bottom: 10px;">FUNAFUTI ATOL</h2>
-        <img src="http://openweathermap.org/img/wn/{w['icon']}@4x.png" width="150">
-        <h1 style="font-size: 5rem; color: white; margin: 0;">{w['temp']}°C</h1>
-        <p style="color: #38bdf8; font-size: 1.5rem; text-transform: uppercase; font-weight: bold;">{w['desc']}</p>
-        <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;">
-            <p style="color: #64748b;">Local Time: Funafuti (UTC+12)</p>
-        </div>
-    </div>
-    """)
-    
-    # Simple Local Tip
-    st.info("**Island Advisory:** High humidity levels expected today. Ensure proper hydration and sun protection.")
+st.map(map_data)
 
-with col_right:
-    # LIVE WINDY MAP EMBED (Focused on Tuvalu)
-    st.subheader("🛰️ Live Pacific Wind & Wave Radar")
-    
-    # This URL is specifically centered on Tuvalu coordinates (-8.52, 179.19)
-    windy_url = "https://embed.windy.com/embed2.html?lat=-8.525&lon=179.196&zoom=6&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=true&type=map&location=coordinates&detail=&metricWind=km/h&metricTemp=%C2%B0C&radarRange=-1"
-    
-    st.components.v1.iframe(windy_url, height=550)
-
-# 6. FOOTER DATA
-st.caption("Data provided by OpenWeatherMap API and Windy.com Satellite Imagery.")
+st.info("💡 Pro-Tip: This dashboard updates automatically when you refresh the page. Data provided by OpenWeather API.")
