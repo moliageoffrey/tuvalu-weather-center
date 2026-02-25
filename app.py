@@ -47,7 +47,7 @@ st.markdown(f"<p style='text-align: center; color: #aaa;'>Last Updated: {datetim
 col1, col2, col3 = st.columns(3)
 
 # Coordinates for Tuvalu islands
-islands = ["Funafuti", "Nanumea", "Nui"]
+islands = ["Funafuti,TV", "Nanumea,TV", "Nui,TV"]
 
 for i, island in enumerate(islands):
     data = get_weather(island)
