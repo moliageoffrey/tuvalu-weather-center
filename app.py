@@ -19,33 +19,40 @@ except:
     st.error("API Key not found. Please add OPENWEATHER_API_KEY to Streamlit Secrets.")
     st.stop()
 
-# 3. Weather Fetching Function
-def get_weather(city):
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+# 3. Weather Fetching Function (Using Coordinates)
+def get_weather(lat, lon):
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     return response.json()
 
-# 4. Custom Styling & Header
-st.markdown("""
-    <style>
-    .main {
-        background-color: #0e1117;
-    }
-    .stMetric {
-        background-color: #1e1e1e;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #333;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center; color: #aaa;'>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M')}</p>", unsafe_allow_html=True)
+# ... (keep your header/styling sections) ...
 
 # 5. Dashboard Layout
 col1, col2, col3 = st.columns(3)
 
+# Exact coordinates for the islands
+islands = {
+    "Funafuti": {"lat": -8.5208, "lon": 179.1962},
+    "Nanumea": {"lat": -5.67, "lon": 176.12},
+    "Nui": {"lat": -7.22, "lon": 177.15}
+}
+
+for i, (name, coords) in enumerate(islands.items()):
+    data = get_weather(coords["lat"], coords["lon"])
+    
+    if data.get("main"):
+        temp = data["main"]["temp"]
+        desc = data["weather"][0]["description"].capitalize()
+        hum = data["main"]["humidity"]
+        wind = data["wind"]["speed"]
+        
+        with [col1, col2, col3][i]:
+            st.metric(label=f"📍 {name}", value=f"{temp}°C", delta=desc)
+            st.write(f"💨 Wind: {wind} m/s")
+            st.write(f"💧 Humidity: {hum}%")
+    else:
+        with [col1, col2, col3][i]:
+            st.error(f"Could not load data for {name}")
 # Coordinates for Tuvalu islands
 islands = ["Funafuti", "Nanumea", "Nui"]
 
