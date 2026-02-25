@@ -14,7 +14,7 @@ st.set_page_config(
 # 2. Load API Key from Streamlit Secrets
 # (Make sure you added OPENWEATHER_API_KEY in the Streamlit Cloud Advanced Settings!)
 try:
-    API_KEY = st.secrets["e57728a01bb0517612bda589671f886c"]
+    API_KEY = st.secrets["OPENWEATHER_API_KEY"]
 except:
     st.error("API Key not found. Please add OPENWEATHER_API_KEY to Streamlit Secrets.")
     st.stop()
