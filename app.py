@@ -1,9 +1,8 @@
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
+import requests
 
 # Refresh every 10 minutes (600,000 milliseconds)
 st_autorefresh(interval=600000, key="weather_refresh")
-
 # 1. PAGE SETUP (Dedicated Full Width)
 st.set_page_config(page_title="Tuvalu National Weather Center", layout="wide")
 
@@ -51,7 +50,7 @@ def get_weather():
 w = get_weather()
 
 # 4. PAGE HEADER & QUICK STATS
-st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_html=True)
 
 # Metrics Row
 m1, m2, m3, m4 = st.columns(4)
