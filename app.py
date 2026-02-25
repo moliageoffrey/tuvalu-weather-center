@@ -48,7 +48,7 @@ def get_weather():
 w = get_weather()
 
 # 4. PAGE HEADER & QUICK STATS
-st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_html=True)
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
 
 # Metrics Row
 m1, m2, m3, m4 = st.columns(4)
