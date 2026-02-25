@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
+mport folium
+from streamlit_folium import st_folium
+
 
 # 1. Page Configuration
 st.set_page_config(
@@ -66,16 +69,28 @@ for i, (name, coords) in enumerate(islands_data.items()):
         with [col1, col2, col3][i]:
             st.error(f"Could not load data for {name}")
 
-# 6. Interactive Map Section
+
+# 6. Satellite Map Section
 st.markdown("---")
-st.subheader("Regional Satellite View")
+st.subheader("🇹🇻 Regional Satellite View")
 
-map_df = pd.DataFrame([
-    {'lat': -8.5208, 'lon': 179.1962, 'name': 'Funafuti'},
-    {'lat': -5.6700, 'lon': 176.1200, 'name': 'Nanumea'},
-    {'lat': -7.2200, 'lon': 177.1500, 'name': 'Nui'}
-])
+# Create a Folium map centered on Tuvalu
+# Tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' 
+# gives us the high-res satellite photographic view.
+m = folium.Map(
+    location=[-7.1095, 177.6493], 
+    zoom_start=6, 
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri'
+)
 
-st.map(map_df)
+# Add markers for your islands
+for name, coords in islands_data.items():
+    folium.Marker(
+        [coords["lat"], coords["lon"]],
+        popup=name,
+        tooltip=name
+    ).add_to(m)
 
-st.info("💡 Data provided by OpenWeather API. Dashboard refreshes on page reload.")
+# Display the map in Streamlit
+st_folium(m, width=1200, height=500)
