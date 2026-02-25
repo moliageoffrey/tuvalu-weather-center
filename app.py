@@ -70,13 +70,11 @@ for i, (name, coords) in enumerate(islands_data.items()):
             st.error(f"Could not load data for {name}")
 
 
-# 6. Satellite Map Section
+# 6. Satellite Map Section with Weather Layers
 st.markdown("---")
-st.subheader("🇹🇻 Regional Satellite View")
+st.subheader("🇹🇻 Regional Satellite View (Live Clouds & Rain)")
 
-# Create a Folium map centered on Tuvalu
-# Tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' 
-# gives us the high-res satellite photographic view.
+# Create the base map
 m = folium.Map(
     location=[-7.1095, 177.6493], 
     zoom_start=6, 
@@ -84,7 +82,27 @@ m = folium.Map(
     attr='Esri'
 )
 
-# Add markers for your islands
+# Add Rain Layer
+folium.TileLayer(
+    tiles=f'https://tile.openweathermap.org/map/precipitation_new/{{z}}/{{x}}/{{y}}.png?appid={API_KEY}',
+    attr='OpenWeatherMap',
+    name='Rain/Precipitation',
+    overlay=True,
+    control=True,
+    opacity=0.6
+).add_to(m)
+
+# Add Clouds Layer
+folium.TileLayer(
+    tiles=f'https://tile.openweathermap.org/map/clouds_new/{{z}}/{{x}}/{{y}}.png?appid={API_KEY}',
+    attr='OpenWeatherMap',
+    name='Cloud Cover',
+    overlay=True,
+    control=True,
+    opacity=0.5
+).add_to(m)
+
+# Add Markers for Islands
 for name, coords in islands_data.items():
     folium.Marker(
         [coords["lat"], coords["lon"]],
@@ -92,5 +110,8 @@ for name, coords in islands_data.items():
         tooltip=name
     ).add_to(m)
 
-# Display the map in Streamlit
+# Add the Layer Control (the button that lets you turn layers on/off)
+folium.LayerControl().add_to(m)
+
+# Display map
 st_folium(m, width=1200, height=500)
