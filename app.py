@@ -46,18 +46,8 @@ st.markdown(f"<p style='text-align: center; color: #aaa;'>Last Updated: {datetim
 # 5. Dashboard Layout
 col1, col2, col3 = st.columns(3)
 
-def get_weather(island_name):
-    # Dictionary of exact locations for Tuvalu islands
-    coords = {
-        "Nanumea": {"lat": -5.67, "lon": 176.12},
-        "Funafuti": {"lat": -8.52, "lon": 179.19},
-        "Nui": {"lat": -7.22, "lon": 177.15}
-    }
-    
-    loc = coords[island_name]
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={loc['lat']}&lon={loc['lon']}&appid={API_KEY}&units=metric"
-    response = requests.get(url)
-    return response.json()
+# Coordinates for Tuvalu islands
+islands = ["Funafuti", "Nanumea", "Nui"]
 
 for i, island in enumerate(islands):
     data = get_weather(island)
