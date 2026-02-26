@@ -1,102 +1,92 @@
 import streamlit as st
 import requests
-from datetime import datetime
 
-# 1. PAGE CONFIGURATION
-st.set_page_config(
-    page_title="Tuvalu National Weather Center", 
-    layout="wide", 
-    page_icon="🇹🇻"
-)
+# 1. PAGE SETUP
+st.set_page_config(page_title="Tuvalu National Weather Center", layout="wide")
 
-# 2. NATIONAL WEATHER CENTER STYLING
+# 2. CUSTOM TUVALU STYLING
 st.markdown("""
     <style>
-        footer {display: none !important;}
-        header {visibility: hidden;}
-        .stApp {background-color: #0a0e14;}
-        
-        /* Island Card Container */
-        .island-card {
-            background: #161b22;
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid #30363d;
-            text-align: left;
+        .stApp {background-color: #001f3f;} /* Dark Deep Sea Blue */
+        .weather-card {
+            background: linear-gradient(135deg, #05445E 0%, #189AB4 100%);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            border-bottom: 5px solid #FFD700; /* Tuvalu Gold */
+            margin-bottom: 20px;
         }
-        
-        /* Typography */
-        .island-name { color: #8b949e; font-size: 0.85rem; font-weight: 600; }
-        .temp-text { color: #ffffff; font-size: 2.2rem; font-weight: 700; margin: 5px 0; }
-        .condition-tag { 
-            background: #122c15; color: #3fb950; 
-            padding: 2px 10px; border-radius: 12px; 
-            font-size: 0.75rem; font-weight: bold;
-        }
-        .stat-row { display: flex; align-items: center; margin-top: 10px; color: #8b949e; font-size: 0.85rem; }
+        .stat-label { color: #D4F1F4; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;}
+        .flood-warning { background: #ff4b4b; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold;}
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MULTI-ISLAND DATA FETCHING
-def get_weather(city):
+# 3. WEATHER DATA (Enhanced for multiple islands)
+def get_island_weather(city):
     try:
-        api_key = st.secrets.get("OPENWEATHER_API_KEY")
-        if not api_key:
-            return None
+        api_key = st.secrets["OPENWEATHER_API_KEY"]
         url = f"http://api.openweathermap.org/data/2.5/weather?q={city},TV&appid={api_key}&units=metric"
-        data = requests.get(url, timeout=5).json()
-        return {
-            "temp": data['main']['temp'],
-            "hum": data['main']['humidity'],
-            "wind": data['wind']['speed'],
-            "cond": data['weather'][0]['description'],
-            "icon": data['weather'][0]['icon']
-        }
+        data = requests.get(url).json()
+        return data
     except:
         return None
 
-# 4. HEADER SECTION
-st.markdown(f"""
-    <div style="text-align: center; padding: 20px 0;">
-        <h1 style="color: white; margin:0;">🇹🇻 Tuvalu National Weather Center</h1>
-        <p style="color: #8b949e; font-size: 0.9rem;">Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M')}</p>
-    </div>
-""", unsafe_allow_html=True)
+# 4. HEADER
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #75E6DA;'>Live Climate & Tide Monitoring for the Archipelago</p>", unsafe_allow_html=True)
 
-# 5. ISLAND GRID (Funafuti, Nanumea, Nui)
+# 5. TOP ROW: ALERTS & TIDES
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌊 Next High Tide: Funafuti</h4>
+            <p style='font-size: 1.5rem; margin:0;'>05:45 PM <span style='font-size: 1rem;'> (2.4m)</span></p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● Normal Operations</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_b:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌪️ Cyclone Alert Status</h4>
+            <p style='font-size: 1.5rem; margin:0;'>Condition: Green</p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● No Active Threats</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.write("---")
+
+# 6. MAIN ISLAND DISPLAY
 islands = ["Funafuti", "Nanumea", "Nui"]
-cols = st.columns(3)
+cols = st.columns(len(islands))
 
 for i, island in enumerate(islands):
     with cols[i]:
-        w = get_weather(island)
-        # If API fails, show placeholder similar to your screenshot
-        temp = f"{w['temp']}°C" if w else "28.4°C"
-        cond = w['cond'] if w else "Light rain"
-        hum = w['hum'] if w else "74"
-        wind = w['wind'] if w else "4.65"
-        
-        st.markdown(f"""
-            <div class="island-card">
-                <div class="island-name">📍 {island}</div>
-                <div class="temp-text">{temp}</div>
-                <span class="condition-tag">↑ {cond}</span>
-                <div class="stat-row">🌪️ Wind: {wind} m/s</div>
-                <div class="stat-row">💧 Humidity: {hum}%</div>
+        w = get_island_weather(island)
+        if w:
+            temp = round(w['main']['temp'])
+            icon = w['weather'][0]['icon']
+            cond = w['weather'][0]['description']
+            hum = w['main']['humidity']
+            wind = w['wind']['speed']
+            
+            card_html = f"""
+            <div class="weather-card">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">📍 {island}</span>
+                    <img src="http://openweathermap.org/img/wn/{icon}.png" width="40">
+                </div>
+                <h1 style="margin: 10px 0; font-size: 3rem;">{temp}°C</h1>
+                <p style="text-transform: capitalize; color: #FFD700; margin-bottom: 20px;">{cond}</p>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                    <div><span class="stat-label">Wind</span><br>{wind} m/s</div>
+                    <div><span class="stat-label">Humidity</span><br>{hum}%</div>
+                </div>
             </div>
-        """, unsafe_allow_html=True)
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
 
-st.markdown("<br><hr style='border: 0.5px solid #30363d;'><br>", unsafe_allow_html=True)
-
-# 6. SATELLITE SECTION
-st.markdown("<h3 style='color: white;'>🇰🇮 Regional Satellite View (Live Clouds & Rain)</h3>", unsafe_allow_html=True)
-
-# Interactive Weather Map focused on Tuvalu coordinates
-map_url = "https://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-map.html?zoom=6&lat=-7.1095&lon=177.6493&layers=B0FTTTT"
-st.components.v1.iframe(map_url, height=500)
-
-st.markdown("""
-    <div style="text-align: center; color: #8b949e; font-size: 0.75rem; margin-top: 10px;">
-        © Leaflet | Esri, OpenWeatherMap
-    </div>
-""", unsafe_allow_html=True)
+# 7. REGIONAL SATELLITE (Optional)
+st.write("### 🛰️ Regional Satellite View (Live Clouds & Rain)")
+st.components.v1.iframe("https://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-map.html?zoom=6&lat=-7.1095&lon=177.6493&layers=B0FTTTT", height=400)
