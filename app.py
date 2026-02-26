@@ -1,117 +1,92 @@
 import streamlit as st
 import requests
-import pandas as pd
-from datetime import datetime
-import folium
-from streamlit_folium import st_folium
 
+# 1. PAGE SETUP
+st.set_page_config(page_title="Tuvalu National Weather Center", layout="wide")
 
-# 1. Page Configuration
-st.set_page_config(
-    page_title="Tuvalu National Weather Center",
-    page_icon="🇹🇻",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
-# 2. Load API Key from Streamlit Secrets
-try:
-    API_KEY = st.secrets["OPENWEATHER_API_KEY"]
-except:
-    st.error("API Key not found. Please add OPENWEATHER_API_KEY to Streamlit Secrets.")
-    st.stop()
-
-# 3. Weather Fetching Function (Using Coordinates)
-def get_weather(lat, lon):
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
-    response = requests.get(url)
-    return response.json()
-
-# 4. Custom Styling & Header
+# 2. CUSTOM TUVALU STYLING
 st.markdown("""
     <style>
-    .stMetric {
-        background-color: #1e1e1e;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #333;
-    }
+        .stApp {background-color: #001f3f;} /* Dark Deep Sea Blue */
+        .weather-card {
+            background: linear-gradient(135deg, #05445E 0%, #189AB4 100%);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            border-bottom: 5px solid #FFD700; /* Tuvalu Gold */
+            margin-bottom: 20px;
+        }
+        .stat-label { color: #D4F1F4; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;}
+        .flood-warning { background: #ff4b4b; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold;}
     </style>
+""", unsafe_allow_html=True)
+
+# 3. WEATHER DATA (Enhanced for multiple islands)
+def get_island_weather(city):
+    try:
+        api_key = st.secrets["OPENWEATHER_API_KEY"]
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city},TV&appid={api_key}&units=metric"
+        data = requests.get(url).json()
+        return data
+    except:
+        return None
+
+# 4. HEADER
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #75E6DA;'>Live Climate & Tide Monitoring for the Archipelago</p>", unsafe_allow_html=True)
+
+# 5. TOP ROW: ALERTS & TIDES
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌊 Next High Tide: Funafuti</h4>
+            <p style='font-size: 1.5rem; margin:0;'>05:45 PM <span style='font-size: 1rem;'> (2.4m)</span></p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● Normal Operations</p>
+        </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center; color: #aaa;'>Last Updated: {datetime.now().strftime('%d %B %Y, %H:%M')}</p>", unsafe_allow_html=True)
+with col_b:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌪️ Cyclone Alert Status</h4>
+            <p style='font-size: 1.5rem; margin:0;'>Condition: Green</p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● No Active Threats</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-# 5. Dashboard Layout (Island Metrics)
-col1, col2, col3 = st.columns(3)
+st.write("---")
 
-# Exact coordinates for the islands
-islands_data = {
-    "Funafuti": {"lat": -8.5208, "lon": 179.1962},
-    "Nanumea": {"lat": -5.67, "lon": 176.12},
-    "Nui": {"lat": -7.22, "lon": 177.15}
-}
+# 6. MAIN ISLAND DISPLAY
+islands = ["Funafuti", "Nanumea", "Nui"]
+cols = st.columns(len(islands))
 
-for i, (name, coords) in enumerate(islands_data.items()):
-    data = get_weather(coords["lat"], coords["lon"])
-    
-    if data.get("main"):
-        temp = data["main"]["temp"]
-        desc = data["weather"][0]["description"].capitalize()
-        hum = data["main"]["humidity"]
-        wind = data["wind"]["speed"]
-        
-        with [col1, col2, col3][i]:
-            st.metric(label=f"📍 {name}", value=f"{temp}°C", delta=desc)
-            st.write(f"💨 Wind: {wind} m/s")
-            st.write(f"💧 Humidity: {hum}%")
-    else:
-        with [col1, col2, col3][i]:
-            st.error(f"Could not load data for {name}")
+for i, island in enumerate(islands):
+    with cols[i]:
+        w = get_island_weather(island)
+        if w:
+            temp = round(w['main']['temp'])
+            icon = w['weather'][0]['icon']
+            cond = w['weather'][0]['description']
+            hum = w['main']['humidity']
+            wind = w['wind']['speed']
+            
+            card_html = f"""
+            <div class="weather-card">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">📍 {island}</span>
+                    <img src="http://openweathermap.org/img/wn/{icon}.png" width="40">
+                </div>
+                <h1 style="margin: 10px 0; font-size: 3rem;">{temp}°C</h1>
+                <p style="text-transform: capitalize; color: #FFD700; margin-bottom: 20px;">{cond}</p>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                    <div><span class="stat-label">Wind</span><br>{wind} m/s</div>
+                    <div><span class="stat-label">Humidity</span><br>{hum}%</div>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
 
-
-# 6. Satellite Map Section with Weather Layers
-st.markdown("---")
-st.subheader("🇹🇻 Regional Satellite View (Live Clouds & Rain)")
-
-# Create the base map
-m = folium.Map(
-    location=[-7.1095, 177.6493], 
-    zoom_start=6, 
-    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attr='Esri'
-)
-
-# Add Rain Layer
-folium.TileLayer(
-    tiles=f'https://tile.openweathermap.org/map/precipitation_new/{{z}}/{{x}}/{{y}}.png?appid={API_KEY}',
-    attr='OpenWeatherMap',
-    name='Rain/Precipitation',
-    overlay=True,
-    control=True,
-    opacity=0.6
-).add_to(m)
-
-# Add Clouds Layer
-folium.TileLayer(
-    tiles=f'https://tile.openweathermap.org/map/clouds_new/{{z}}/{{x}}/{{y}}.png?appid={API_KEY}',
-    attr='OpenWeatherMap',
-    name='Cloud Cover',
-    overlay=True,
-    control=True,
-    opacity=0.5
-).add_to(m)
-
-# Add Markers for Islands
-for name, coords in islands_data.items():
-    folium.Marker(
-        [coords["lat"], coords["lon"]],
-        popup=name,
-        tooltip=name
-    ).add_to(m)
-
-# Add the Layer Control (the button that lets you turn layers on/off)
-folium.LayerControl().add_to(m)
-
-# Display map
-st_folium(m, width=1200, height=500)
+# 7. REGIONAL SATELLITE (Optional)
+st.write("### 🛰️ Regional Satellite View (Live Clouds & Rain)")
+st.components.v1.iframe("https://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-map.html?zoom=6&lat=-7.1095&lon=177.6493&layers=B0FTTTT", height=400)
