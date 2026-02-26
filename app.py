@@ -99,9 +99,3 @@ with col2:
         "https://embed.windy.com/embed2.html?lat=-8.520&lon=179.200&detailLat=-8.520&detailLon=179.200&width=650&height=450&zoom=6&level=surface&overlay=satellite&product=satellite&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1",
         height=500
     )
-    
-    # Optional Program Guide below the map
-    with st.expander("📺 View TTV Program Guide"):
-        st.components.v1.html("""
-            <iframe src="https://www.ttv.sb/tv-guide/" width="100%" height="500px" style="border-radius:15px;"></iframe>
-        """, height=520)
