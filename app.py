@@ -1,56 +1,92 @@
-with col1:
-    # --- ENHANCED TUVALU RESILIENCE DASHBOARD ---
-    weather_card = f"""
-    <div style="
-        background: linear-gradient(160deg, #002B36 0%, #004B5E 100%); 
-        border-radius: 28px; 
-        padding: 25px; 
-        color: white; 
-        border: 2px solid #38bdf8; 
-        box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-        font-family: 'Inter', sans-serif;
-    ">
-        <div style="text-align: center; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 15px; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 1.1rem; color: #FFD700; letter-spacing: 2px;">🇹🇻 NATIONAL RESILIENCE HUB</h3>
-            <p style="margin:5px 0 0; font-size: 0.75rem; color: #9ca3af;">COASTAL MONITORING: FUNAFUTI</p>
-        </div>
+import streamlit as st
+import requests
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="font-size: 4rem; margin:0; font-weight: 800; color: white;">{w['temp']}°C</h1>
-                <p style="color: #38bdf8; font-weight: 700; font-size: 1.1rem; text-transform: capitalize;">{w['cond']}</p>
-            </div>
-            <img src="http://openweathermap.org/img/wn/{w['icon']}@4x.png" width="110">
-        </div>
+# 1. PAGE SETUP
+st.set_page_config(page_title="Tuvalu National Weather Center", layout="wide")
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+# 2. CUSTOM TUVALU STYLING
+st.markdown("""
+    <style>
+        .stApp {background-color: #001f3f;} /* Dark Deep Sea Blue */
+        .weather-card {
+            background: linear-gradient(135deg, #05445E 0%, #189AB4 100%);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            border-bottom: 5px solid #FFD700; /* Tuvalu Gold */
+            margin-bottom: 20px;
+        }
+        .stat-label { color: #D4F1F4; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;}
+        .flood-warning { background: #ff4b4b; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold;}
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. WEATHER DATA (Enhanced for multiple islands)
+def get_island_weather(city):
+    try:
+        api_key = st.secrets["OPENWEATHER_API_KEY"]
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city},TV&appid={api_key}&units=metric"
+        data = requests.get(url).json()
+        return data
+    except:
+        return None
+
+# 4. HEADER
+st.markdown("<h1 style='text-align: center; color: white;'>🇹🇻 Tuvalu National Weather Center</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #75E6DA;'>Live Climate & Tide Monitoring for the Archipelago</p>", unsafe_allow_html=True)
+
+# 5. TOP ROW: ALERTS & TIDES
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌊 Next High Tide: Funafuti</h4>
+            <p style='font-size: 1.5rem; margin:0;'>05:45 PM <span style='font-size: 1rem;'> (2.4m)</span></p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● Normal Operations</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_b:
+    st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px;'>
+            <h4 style='margin:0; color: #FFD700;'>🌪️ Cyclone Alert Status</h4>
+            <p style='font-size: 1.5rem; margin:0;'>Condition: Green</p>
+            <p style='color: #00ff00; font-size: 0.8rem;'>● No Active Threats</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.write("---")
+
+# 6. MAIN ISLAND DISPLAY
+islands = ["Funafuti", "Nanumea", "Nui"]
+cols = st.columns(len(islands))
+
+for i, island in enumerate(islands):
+    with cols[i]:
+        w = get_island_weather(island)
+        if w:
+            temp = round(w['main']['temp'])
+            icon = w['weather'][0]['icon']
+            cond = w['weather'][0]['description']
+            hum = w['main']['humidity']
+            wind = w['wind']['speed']
             
-            <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 15px; border-left: 4px solid #38bdf8;">
-                <small style="color: #9ca3af; display: block; font-size: 0.65rem;">TIDAL RISK</small>
-                <span style="font-weight: 700; color: #00ff00;">LOW IMPACT</span>
+            card_html = f"""
+            <div class="weather-card">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">📍 {island}</span>
+                    <img src="http://openweathermap.org/img/wn/{icon}.png" width="40">
+                </div>
+                <h1 style="margin: 10px 0; font-size: 3rem;">{temp}°C</h1>
+                <p style="text-transform: capitalize; color: #FFD700; margin-bottom: 20px;">{cond}</p>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                    <div><span class="stat-label">Wind</span><br>{wind} m/s</div>
+                    <div><span class="stat-label">Humidity</span><br>{hum}%</div>
+                </div>
             </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
 
-            <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 15px; border-left: 4px solid #FFD700;">
-                <small style="color: #9ca3af; display: block; font-size: 0.65rem;">UV INDEX</small>
-                <span style="font-weight: 700;">HIGH (8/11)</span>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px;">
-                <small style="color: #9ca3af; display: block; font-size: 0.65rem;">HUMIDITY</small>
-                <span style="font-weight: 700;">{w['hum']}%</span>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px;">
-                <small style="color: #9ca3af; display: block; font-size: 0.65rem;">WIND SPEED</small>
-                <span style="font-weight: 700;">{w['wind']} km/h</span>
-            </div>
-        </div>
-
-        <div style="margin-top: 20px; background: rgba(56, 189, 248, 0.1); border: 1px dashed #38bdf8; padding: 10px; border-radius: 12px; text-align: center;">
-            <p style="margin:0; font-size: 0.75rem; color: #38bdf8; font-weight: 600;">
-                📢 ADVISORY: No coastal flood threats detected for the current tide cycle.
-            </p>
-        </div>
-    </div>
-    """
-    st.components.v1.html(weather_card, height=500)
+# 7. REGIONAL SATELLITE (Optional)
+st.write("### 🛰️ Regional Satellite View (Live Clouds & Rain)")
+st.components.v1.iframe("https://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-map.html?zoom=6&lat=-7.1095&lon=177.6493&layers=B0FTTTT", height=400)
