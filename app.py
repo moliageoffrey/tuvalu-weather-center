@@ -87,6 +87,21 @@ for i, island in enumerate(islands):
             """
             st.markdown(card_html, unsafe_allow_html=True)
 
-# 7. REGIONAL SATELLITE (Optional)
-st.write("### 🛰️ Regional Satellite View (Live Clouds & Rain)")
-st.components.v1.iframe("https://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-map.html?zoom=6&lat=-7.1095&lon=177.6493&layers=B0FTTTT", height=400)
+with col2:
+    # --- LIVE SATELLITE SECTION ---
+    st.markdown("<h3>🛰️ Regional Satellite (Live Clouds & Rain)</h3>", unsafe_allow_html=True)
+    
+    # Windy.com Live Satellite Map for Tuvalu
+    satellite_url = "https://www.windy.com/-8.520/179.200?satellite,-9.319,179.200,6"
+    
+    # We use st.components.v1.iframe here which is more stable for map providers
+    st.components.v1.iframe(
+        "https://embed.windy.com/embed2.html?lat=-8.520&lon=179.200&detailLat=-8.520&detailLon=179.200&width=650&height=450&zoom=6&level=surface&overlay=satellite&product=satellite&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1",
+        height=500
+    )
+    
+    # Optional Program Guide below the map
+    with st.expander("📺 View TTV Program Guide"):
+        st.components.v1.html("""
+            <iframe src="https://www.ttv.sb/tv-guide/" width="100%" height="500px" style="border-radius:15px;"></iframe>
+        """, height=520)
